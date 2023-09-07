@@ -1,47 +1,57 @@
-# neotest-vitest
+# neotest-foundry
 
-This plugin provides a [Vitest](https://vitest.dev/) adapter for the [Neotest](https://github.com/rcarriga/neotest) framework.
+This plugin provides a [Foundry](https://github.com/foundry-rs/foundry) adapter for the [Neotest](https://github.com/rcarriga/neotest) framework.
 
-Credits to [neotest-jest](https://github.com/haydenmeade/neotest-jest)
+Credits to [neotest-vitest](https://github.com/marilari88/neotest-vitest) and [vscode-foundry-test-runner](https://github.com/PraneshASP/vscode-foundry-test-runner).
 
-## Known issues
-- ~~Wrong error location on collecting results - (this is related to Vitest reporting issue)~~ (solved by Vitest 0.23.0)
-- test.each is currently not well supported (WIP)
+https://github.com/llllvvuu/neotest-foundry/assets/5601392/f8d70d05-f0fb-4aef-b2a6-8c71ec8ae7c4
 
-## How to install it
-```
-use({
-  'rcarriga/neotest',
-  requires = {
+## Installation
+
+### [lazy.nvim](https://github.com/folke/lazy.nvim)
+```lua
+{
+  'nvim-neotest/neotest',
+  dependencies = {
     ...,
-    'marilari88/neotest-vitest',
+    'llllvvuu/neotest-foundry',
   }
-  config = function()
-    require('neotest').setup({
-      ...,
-      adapters = {
-        require('neotest-vitest') 
-        }
-    })
-  end
-})
+  config = {
+    ...,
+    adapters = {
+      require('neotest-foundry')
+    }
+  }
+}
 ```
 
-## Usage
-![usage preview](https://user-images.githubusercontent.com/32909388/185812063-d05d9cc7-b9aa-43ed-915b-cf156e3f0c52.gif)
+## Configuration
+Defaults:
+```lua
+...
+adapters = {
+  require('neotest-foundry')({
+    foundryCommand = "forge test", -- string | function
+    foundryConfig = nil, -- string | function
+    env = {}, -- table | function
+    cwd = function () return lib.files.match_root_pattern("foundry.toml") end, -- string | function
+    filterDir = function(name)
+      return (
+        name ~= "node_modules"
+        and name ~= "cache"
+        and name ~= "out"
+        and name ~= "artifacts"
+        and name ~= "docs"
+        and name ~= "doc"
+        -- and name ~= "lib"
+      )
+    end,
+  })
+}
+```
 
-See neotest's documentation for more information on how to run tests.
-
-## :gift: Contributing
-
-Please raise a PR if you are interested in adding new functionality or fixing any bugs. When submitting a bug, please include an example spec that can be tested.
-
-To trigger the tests for the adapter, run:
+## Testing
 
 ```sh
 ./scripts/test
 ```
-
-## Bug Reports
-
-Please file any bug reports and I _might_ take a look if time permits otherwise please submit a PR, this plugin is intended to be by the community for the community.
