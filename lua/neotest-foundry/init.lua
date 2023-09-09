@@ -3,6 +3,7 @@ local lib = require("neotest.lib")
 local logger = require("neotest.logging")
 
 ---@class neotest.FoundryOptions
+---@field filterDir?: fun(string): boolean
 ---@field foundryCommand? string|fun(): string
 ---@field foundryConfigFile? string|fun(): string
 ---@field env? table<string, string>|fun(): table<string, string>
@@ -269,6 +270,9 @@ setmetatable(adapter, {
       getCwd = function()
         return opts.cwd
       end
+    end
+    if is_callable(opts.filterDir) then
+      adapter.filter_dir = opts.filterDir
     end
     return adapter
   end,
