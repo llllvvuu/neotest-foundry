@@ -20,8 +20,6 @@ describe("build_spec with override", function()
       "**/Counter.t.sol",
       "--match-contract",
       "^CounterTest$",
-      "--json",
-      "--silent",
     })
 
     plugin = require("neotest-foundry")({
@@ -45,8 +43,6 @@ describe("build_spec with override", function()
       "^testSetNumber",
       "--config-path",
       "myconfig",
-      "--json",
-      "--silent",
     })
     assert.is.same(
       spec.env,

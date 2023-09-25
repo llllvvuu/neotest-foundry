@@ -3,7 +3,7 @@ local lib = require("neotest.lib")
 local logger = require("neotest.logging")
 
 ---@class neotest.FoundryOptions
----@field filterDir?: fun(string): boolean
+---@field filterDir? fun(string): boolean
 ---@field foundryCommand? string|fun(): string
 ---@field foundryConfigFile? string|fun(): string
 ---@field env? table<string, string>|fun(): table<string, string>
@@ -142,8 +142,6 @@ function adapter.build_spec(args)
     vim.list_extend(command, { "--config-path", config })
   end
 
-  vim.list_extend(command, { "--json", "--silent" })
-
   return {
     command = command,
     cwd = cwd,
@@ -170,44 +168,49 @@ local function tableIsEmpty(t)
   return true
 end
 
-local function parsed_json_to_results(data, spec)
+--- @param data string
+--- @param spec neotest.RunSpec
+local function parse_plaintext_results(data, spec)
+  --- @type neotest.Result[]
   local tests = {}
-
-  for testContract, contractTestResults in pairs(data) do
-    for testFn, testResult in pairs(contractTestResults.test_results) do
-      local status = testResult.status
-
-      if status == "Success" then
+  data = cleanAnsi(data)
+  local currentDisplayFilename, currentContractName
+  for line in data:gmatch("[^\r\n]+") do
+    if line == "Failing tests:" then
+      break
+    end
+    local displayFilename, contractName = line:match("Running %d+ tests? for (.+):(%S+)")
+    currentDisplayFilename = displayFilename or currentDisplayFilename
+    currentContractName = contractName or currentContractName
+    if currentDisplayFilename and currentContractName then
+      local passTest = line:match("%[PASS%] ([^(]+)")
+      local failMessage, failTest = line:match("%[FAIL%. Reason: (.+)%] ([^(]+)")
+      local testName, status
+      if passTest then
         status = "passed"
-      elseif status == "Failure" then
+        testName = passTest
+      elseif failTest then
         status = "failed"
-      else
-        status = "skipped"
+        testName = failTest
       end
-
-      local i = 1
-      local errorMsg = ""
-      local errors = {}
-      for _, decodedLog in pairs(testResult.decoded_logs) do
-        if string.match(errorMsg, "^Error:") ~= nil then
-          if errorMsg ~= "" then
-            errors[i] = { message = errorMsg }
-            i = i + 1
-          end
-          errorMsg = cleanAnsi(decodedLog)
-        else
-          errorMsg = errorMsg .. "\n" .. cleanAnsi(decodedLog)
+      if status then
+        local i = 1
+        local errors = {}
+        if failMessage then
+          errors[i] = { message = failMessage }
+          i = i + 1
         end
-      end
-      if errorMsg ~= "" then
-        errors[i] = { message = errorMsg }
-        i = i + 1
-      end
-
-      local keyid = spec.cwd .. "/" .. testContract:gsub(":", "::") .. "::" .. testFn:match("[^(]+")
-      tests[keyid] = { status = status, short = testResult.reason }
-      if not tableIsEmpty(errors) then
-        tests[keyid].errors = errors
+        local keyId = spec.cwd
+          .. "/"
+          .. currentDisplayFilename
+          .. "::"
+          .. currentContractName
+          .. "::"
+          .. testName
+        tests[keyId] = { status = status, short = failMessage }
+        if not tableIsEmpty(errors) then
+          tests[keyId].errors = errors
+        end
       end
     end
   end
@@ -226,14 +229,7 @@ function adapter.results(spec, result, tree)
     return {}
   end
 
-  local ok, parsed = pcall(vim.json.decode, data, { luanil = { object = true } })
-
-  if not ok then
-    logger.error("Failed to parse test output json")
-    return {}
-  end
-
-  return parsed_json_to_results(parsed, spec)
+  return parse_plaintext_results(data, spec)
 end
 
 local is_callable = function(obj)
