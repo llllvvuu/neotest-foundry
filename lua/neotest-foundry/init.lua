@@ -24,6 +24,7 @@ function adapter.filter_dir(name)
     and name ~= "artifacts"
     and name ~= "docs"
     and name ~= "doc"
+    and name ~= "lib"
   )
 end
 
