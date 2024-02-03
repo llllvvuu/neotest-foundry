@@ -50,6 +50,9 @@ adapters = {
 }
 ```
 
+### Note on monorepos
+If you start Neovim from the contracts directory instead of the monorepo root it should work. e.g. `cd contracts/core && nvim`
+
 ## Testing
 
 ```sh
