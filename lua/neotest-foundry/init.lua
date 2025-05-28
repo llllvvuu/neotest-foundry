@@ -180,12 +180,12 @@ local function parse_plaintext_results(data, spec)
     if line == "Failing tests:" then
       break
     end
-    local displayFilename, contractName = line:match("Running %d+ tests? for (.+):(%S+)")
+    local displayFilename, contractName = line:match("Ran %d+ tests? for (.+):(%S+)")
     currentDisplayFilename = displayFilename or currentDisplayFilename
     currentContractName = contractName or currentContractName
     if currentDisplayFilename and currentContractName then
       local passTest = line:match("%[PASS%] ([^(]+)")
-      local failMessage, failTest = line:match("%[FAIL%. Reason: (.+)%] ([^(]+)")
+      local failMessage, failTest = line:match("%[FAIL%: (.+)%] ([^(]+)")
       local testName, status
       if passTest then
         status = "passed"
